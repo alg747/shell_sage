@@ -155,6 +155,9 @@ code_theme = monokai    # syntax highlighting theme
 code_lexer = python     # default code lexer
 ```
 
+You can find all of the code theme and code lexer options here:
+https://pygments.org/styles/
+
 ### Command Line Overrides
 
 Any configuration option can be overridden via command line arguments:
