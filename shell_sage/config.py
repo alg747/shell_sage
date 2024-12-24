@@ -29,8 +29,8 @@ providers = {
 class ShellSageConfig:
     provider: str = "anthropic"
     model: str = providers['anthropic'][1]
-    base_url: str = None
-    api_key: str = None
+    base_url: str = ''
+    api_key: str = ''
     history_lines: int = -1
     code_theme: str = "monokai"
     code_lexer: str = "python"
