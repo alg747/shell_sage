@@ -101,7 +101,10 @@ ssage hi ShellSage
 cat error.log | ssage explain this error
 
 # Target a specific tmux pane
-ssage --pid %3 what's happening in this pane?
+ssage --pid %3 what is happening in this pane?
+
+# Automatically fill in the command to run
+ssage --c how can I list all files including the hidden ones?
 ```
 
 The `--pid` flag is particularly useful when you want to analyze content
