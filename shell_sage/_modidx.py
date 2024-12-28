@@ -14,6 +14,7 @@ d = { 'settings': { 'branch': 'main',
                                  'shell_sage.core.get_opts': ('core.html#get_opts', 'shell_sage/core.py'),
                                  'shell_sage.core.get_pane': ('core.html#get_pane', 'shell_sage/core.py'),
                                  'shell_sage.core.get_panes': ('core.html#get_panes', 'shell_sage/core.py'),
+                                 'shell_sage.core.get_res': ('core.html#get_res', 'shell_sage/core.py'),
                                  'shell_sage.core.get_sage': ('core.html#get_sage', 'shell_sage/core.py'),
                                  'shell_sage.core.main': ('core.html#main', 'shell_sage/core.py'),
                                  'shell_sage.core.tmux_history_lim': ('core.html#tmux_history_lim', 'shell_sage/core.py')}}}
