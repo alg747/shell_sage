@@ -40,4 +40,5 @@ def get_cfg():
     path = _cfg_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     _types = get_type_hints(ShellSageConfig)
-    return Config(path.parent, path.name, create=asdict(ShellSageConfig()), types=_types)
+    return Config(path.parent, path.name, create=asdict(ShellSageConfig()),
+                  types=_types, inline_comment_prefixes=('#'))
