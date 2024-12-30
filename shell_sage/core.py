@@ -13,6 +13,7 @@ from msglm import mk_msg_openai as mk_msg
 from openai import OpenAI
 from rich.console import Console
 from rich.markdown import Markdown
+from . import __version__
 from .config import *
 from subprocess import check_output as co
 
@@ -213,12 +214,10 @@ def main(
     code_theme: str = None, # The code theme to use when rendering ShellSage's responses
     code_lexer: str = None, # The lexer to use for inline code markdown blocks
     verbosity: int = 0 # Level of verbosity (0 or 1)
-):  
+):
     opts = get_opts(history_lines=history_lines, provider=provider, model=model,
                     base_url=base_url, api_key=api_key, code_theme=code_theme,
                     code_lexer=code_lexer)
-    if opts.history_lines is None or opts.history_lines < 0:
-        opts.history_lines = tmux_history_lim()
 
     mode = 'default'
     if s: mode = 'sassy'
@@ -231,8 +230,10 @@ def main(
     ctxt = '' if skip_system else _sys_info()
 
     # Get tmux history if in a tmux session
-    if os.environ.get('TMUX'):
+    if os.environ.get('TMUX', None):
         if verbosity>0: print(f"{datetime.now()} | Adding TMUX history to prompt")
+        if opts.history_lines is None or opts.history_lines < 0:
+            opts.history_lines = tmux_history_lim()
         history = get_history(opts.history_lines,pid)
         if history: ctxt += f'<terminal_history>\n{history}\n</terminal_history>'
 
