@@ -146,7 +146,7 @@ example:
 [DEFAULT]
 # Choose your AI model provider
 provider = anthropic     # or 'openai'
-model = claude-3-sonnet # or 'gpt-4o-mini' for OpenAI
+model = claude-3-5-sonnet-20241022 # or 'gpt-4o-mini' for OpenAI
 base_url = # leave empty to use default openai endpoint
 api_key = # leave empty to default to using your OPENAI_API_KEY env var
 
@@ -187,7 +187,7 @@ ssage --history-lines 50 "what commands did I just run?"
 
     ``` sh
     # Pipe logs directly
-    tail -f log.txt | ssage "watch for errors"
+    tail log.txt | ssage "summarize these logs"
 
     # Combine commands
     git diff | ssage "review these changes"
