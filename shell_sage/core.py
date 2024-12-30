@@ -221,7 +221,10 @@ def main(
 
     mode = 'default'
     if s: mode = 'sassy'
-    if c: mode = 'command'
+    if c:
+        if os.environ.get('TMUX') is None:
+            raise Exception('Must be in a tmux session to use command mode.')
+        mode = 'command'
 
     if verbosity>0:
         print(f"{datetime.now()} | Starting ShellSage request with options {opts}")
@@ -230,7 +233,7 @@ def main(
     ctxt = '' if skip_system else _sys_info()
 
     # Get tmux history if in a tmux session
-    if os.environ.get('TMUX', None):
+    if os.environ.get('TMUX'):
         if verbosity>0: print(f"{datetime.now()} | Adding TMUX history to prompt")
         if opts.history_lines is None or opts.history_lines < 0:
             opts.history_lines = tmux_history_lim()
