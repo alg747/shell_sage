@@ -202,6 +202,7 @@ def get_res(sage, q, provider, is_command=False):
 @call_parse
 def main(
     query: Param('The query to send to the LLM', str, nargs='+'),
+    v: Param("Print version", action='version') = '%(prog)s ' + __version__,
     pid: str = 'current', # `current`, `all` or tmux pane_id (e.g. %0) for context
     skip_system: bool = False, # Whether to skip system information in the AI's context
     history_lines: int = None, # Number of history lines. Defaults to tmux scrollback history length
