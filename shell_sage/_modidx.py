@@ -24,4 +24,5 @@ d = { 'settings': { 'branch': 'main',
                                 'shell_sage.rag._man_pages': ('rag.html#_man_pages', 'shell_sage/rag.py'),
                                 'shell_sage.rag.clean': ('rag.html#clean', 'shell_sage/rag.py'),
                                 'shell_sage.rag.index_man_pages': ('rag.html#index_man_pages', 'shell_sage/rag.py'),
+                                'shell_sage.rag.main': ('rag.html#main', 'shell_sage/rag.py'),
                                 'shell_sage.rag.search': ('rag.html#search', 'shell_sage/rag.py')}}}

@@ -165,9 +165,9 @@ def get_history(n, pid='current'):
     except subprocess.CalledProcessError: return None
 
 # %% ../nbs/00_core.ipynb 24
-def get_docs(q: str, limit: int=2, threshold: float=0.8):
+def get_docs(q: str, limit: int=2, threshold: float=0.5):
     df = search(q, limit, threshold)
-    docs = [f'<retrieved_doc relevance_score={1 - r.cosine_distance:.2f}>\n{r.content}\n</retrieved_doc>'
+    docs = [f'<retrieved_doc package_name={r.package_name} relevance_score={1 - r.cosine_distance:.2f}>\n{r.content}\n</retrieved_doc>'
             for r in df.itertuples()]
     return f'<retrieved_docs>\n{"\n".join(docs)}\n</retrieved_docs>'
 

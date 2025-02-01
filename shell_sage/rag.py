@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['db_path', 'chunker', 'static_embedding', 'model', 'ndim', 'db', 'tbl', 'EmbeddingTable', 'clean', 'index_man_pages',
-           'search']
+           'search', 'main']
 
 # %% ../nbs/02_rag.ipynb 3
 from chonkie import SentenceChunker
@@ -17,27 +17,27 @@ from subprocess import check_output as co
 import os, re, subprocess
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
-# %% ../nbs/02_rag.ipynb 5
+# %% ../nbs/02_rag.ipynb 6
 # set up db path in user's home cache directory
 db_path = Path.home() / '.cache' / 'shell_sage' / 'db'
 db_path.mkdir(parents=True, exist_ok=True)
 
-# %% ../nbs/02_rag.ipynb 6
+# %% ../nbs/02_rag.ipynb 7
 chunker = SentenceChunker(tokenizer="gpt2", chunk_size=2_048,
                           chunk_overlap=256, min_sentences_per_chunk=1)
 
-# %% ../nbs/02_rag.ipynb 7
+# %% ../nbs/02_rag.ipynb 8
 static_embedding = StaticEmbedding.from_model2vec("minishlab/potion-retrieval-32M")
 model = SentenceTransformer(modules=[static_embedding], device="cpu")
 ndim = model.encode(["Example sentence"]).shape[1]
 
-# %% ../nbs/02_rag.ipynb 9
+# %% ../nbs/02_rag.ipynb 10
 class EmbeddingTable(LanceModel):
     content: str
     package_name: str
     embedding: Vector(ndim)
 
-# %% ../nbs/02_rag.ipynb 10
+# %% ../nbs/02_rag.ipynb 11
 db = connect(db_path)
 tbl = None
 try: tbl = db.open_table("man_pages")
@@ -45,7 +45,7 @@ except ValueError:
     tbl = db.create_table("man_pages", schema=EmbeddingTable, mode="create")
     tbl.create_fts_index("content") # for hybrid search
 
-# %% ../nbs/02_rag.ipynb 12
+# %% ../nbs/02_rag.ipynb 14
 def _get_page(cmd):
     try: return cmd, co(['man', cmd], text=True,
                    stderr=subprocess.DEVNULL).strip()
@@ -78,17 +78,24 @@ def _man_pages(lim=None):
     return zip(*pages.map(lambda x: (x[0], clean(x[1]))))
 
 
-# %% ../nbs/02_rag.ipynb 15
+# %% ../nbs/02_rag.ipynb 17
 def index_man_pages(cmds, pages):
     for cmd, chunks in zip(cmds, chunker.chunk_batch(pages)):
         embds = model.encode([chunk.text for chunk in chunks])
         tbl.add([EmbeddingTable(content=c.text, package_name=cmd, embedding=emb)
                  for c, emb in zip(chunks, embds)])
 
-# %% ../nbs/02_rag.ipynb 17
-def search(q: str, limit: int=2, threshold: float=0.8):
+# %% ../nbs/02_rag.ipynb 19
+def search(q: str, limit: int=2, threshold: float=0.5):
     q_emb = model.encode([q])
     df = tbl.search(q_emb).metric("cosine").limit(limit).to_pandas()
     df = df.rename(columns={"_distance": "cosine_distance"})
-    df = df[df.cosine_distance < 1 -threshold]
+    df = df[df.cosine_distance < 1 - threshold]
     return df
+
+# %% ../nbs/02_rag.ipynb 22
+@call_parse
+def main():
+    "Index man pages for RAG"
+    cmds, pages = _man_pages()
+    index_man_pages(cmds, pages)
