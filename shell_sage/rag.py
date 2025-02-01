@@ -4,9 +4,22 @@
 __all__ = ['db_path', 'chunker', 'static_embedding', 'model', 'ndim', 'db', 'tbl', 'EmbeddingTable', 'clean', 'index_man_pages',
            'search']
 
+# %% ../nbs/02_rag.ipynb 3
+from chonkie import SentenceChunker
+from fastcore.all import *
+from lancedb import connect
+from lancedb.pydantic import LanceModel, Vector
+from pathlib import Path
+from sentence_transformers import SentenceTransformer
+from sentence_transformers.models import StaticEmbedding
+from subprocess import check_output as co
+
+import os, re, subprocess
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+
 # %% ../nbs/02_rag.ipynb 5
-# set up db path in user's home directory
-db_path = Path.home() / "shell_sage" / "db"
+# set up db path in user's home cache directory
+db_path = Path.home() / '.cache' / 'shell_sage' / 'db'
 db_path.mkdir(parents=True, exist_ok=True)
 
 # %% ../nbs/02_rag.ipynb 6
@@ -73,6 +86,9 @@ def index_man_pages(cmds, pages):
                  for c, emb in zip(chunks, embds)])
 
 # %% ../nbs/02_rag.ipynb 17
-def search(query):
-    q_emb = model.encode([query])
-    return tbl.search(q_emb).metric("cosine").limit(2).to_pandas()
+def search(q: str, limit: int=2, threshold: float=0.8):
+    q_emb = model.encode([q])
+    df = tbl.search(q_emb).metric("cosine").limit(limit).to_pandas()
+    df = df.rename(columns={"_distance": "cosine_distance"})
+    df = df[df.cosine_distance < 1 -threshold]
+    return df

@@ -32,6 +32,7 @@ class ShellSageConfig:
     base_url: str = ''
     api_key: str = ''
     history_lines: int = -1
+    retrieve_limit: int = 5
     code_theme: str = "monokai"
     code_lexer: str = "python"
 

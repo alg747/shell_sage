@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['print', 'sp', 'csp', 'ssp', 'default_cfg', 'clis', 'sps', 'conts', 'p', 'get_pane', 'get_panes', 'tmux_history_lim',
-           'get_history', 'get_opts', 'get_sage', 'get_res', 'main']
+           'get_history', 'get_docs', 'get_opts', 'get_sage', 'get_res', 'main']
 
 # %% ../nbs/00_core.ipynb 3
 from datetime import datetime
@@ -15,6 +15,8 @@ from rich.console import Console
 from rich.markdown import Markdown
 from . import __version__
 from .config import *
+try: from shell_sage.rag import *
+except: pass
 from subprocess import check_output as co
 
 import os,re,subprocess,sys
@@ -150,12 +152,11 @@ def get_panes(n):
     pids = [p for p in co(['tmux', 'list-panes', '-F', '#{pane_id}'], text=True).splitlines()]        
     return '\n'.join(f"<pane id={p} {'active' if p==cid else ''}>{get_pane(n, p)}</pane>" for p in pids)        
 
-# %% ../nbs/00_core.ipynb 20
+# %% ../nbs/00_core.ipynb 19
 def tmux_history_lim():
-    lim = co(['tmux', 'display-message', '-p', '#{history-limit}'], text=True).strip()
-    return int(lim)
+    return int(co(['tmux', 'display-message', '-p', '#{history-limit}'], text=True).strip())
 
-# %% ../nbs/00_core.ipynb 22
+# %% ../nbs/00_core.ipynb 21
 def get_history(n, pid='current'):
     try:
         if pid=='current': return get_pane(n)
@@ -164,6 +165,13 @@ def get_history(n, pid='current'):
     except subprocess.CalledProcessError: return None
 
 # %% ../nbs/00_core.ipynb 24
+def get_docs(q: str, limit: int=2, threshold: float=0.8):
+    df = search(q, limit, threshold)
+    docs = [f'<retrieved_doc relevance_score={1 - r.cosine_distance:.2f}>\n{r.content}\n</retrieved_doc>'
+            for r in df.itertuples()]
+    return f'<retrieved_docs>\n{"\n".join(docs)}\n</retrieved_docs>'
+
+# %% ../nbs/00_core.ipynb 27
 default_cfg = asdict(ShellSageConfig())
 def get_opts(**opts):
     cfg = get_cfg()
@@ -171,7 +179,7 @@ def get_opts(**opts):
         if v is None: opts[k] = cfg.get(k, default_cfg.get(k))
     return AttrDict(opts)
 
-# %% ../nbs/00_core.ipynb 26
+# %% ../nbs/00_core.ipynb 29
 clis = {
     'anthropic': cla.Client,
     'openai': cos.Client
@@ -187,7 +195,7 @@ def get_sage(provider, model, base_url=None, api_key=None, mode='default'):
     else: cli = clis[provider](model)
     return partial(cli, sp=sps[mode])
 
-# %% ../nbs/00_core.ipynb 30
+# %% ../nbs/00_core.ipynb 33
 conts = {
     'anthropic': cla.contents,
     'openai': cos.contents
@@ -199,7 +207,7 @@ def get_res(sage, q, provider, is_command=False):
         return re.search(p, res).group(1).strip()
     else: return conts[provider](sage(q))
 
-# %% ../nbs/00_core.ipynb 34
+# %% ../nbs/00_core.ipynb 37
 @call_parse
 def main(
     query: Param('The query to send to the LLM', str, nargs='+'),
@@ -209,6 +217,8 @@ def main(
     history_lines: int = None, # Number of history lines. Defaults to tmux scrollback history length
     s: bool = False, # Enable sassy mode
     c: bool = False, # Enable command mode
+    retrieve: bool = False, # Retrieve relevant man pages and add them to the prompt. Must have installed `shell_sage[rag]`.
+    retrieve_limit: int = 5, # Number of documents to retrieve.
     provider: str = None, # The LLM Provider
     model: str = None, # The LLM model that will be invoked on the LLM provider
     base_url: str = None,
@@ -219,7 +229,7 @@ def main(
 ):
     opts = get_opts(history_lines=history_lines, provider=provider, model=model,
                     base_url=base_url, api_key=api_key, code_theme=code_theme,
-                    code_lexer=code_lexer)
+                    code_lexer=code_lexer, retrieve_limit=retrieve_limit)
 
     mode = 'default'
     if s: mode = 'sassy'
@@ -242,6 +252,12 @@ def main(
         history = get_history(opts.history_lines,pid)
         if history: ctxt += f'<terminal_history>\n{history}\n</terminal_history>'
 
+    if retrieve:
+        if verbosity>0: print(f"{datetime.now()} | Retrieving relevant man pages")
+        try: ctxt += get_docs(query, limit=opts.retrieve_limit)
+        except ImportError:
+            raise Exception('Must have installed `shell_sage[rag]` to retrieve man pages')
+        print(ctxt)
     # Read from stdin if available
     if not sys.stdin.isatty(): 
         if verbosity>0: print(f"{datetime.now()} | Adding stdin to prompt")
