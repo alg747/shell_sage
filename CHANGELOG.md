@@ -2,6 +2,21 @@
 
 <!-- do not remove -->
 
+## 0.0.7
+
+### New Features
+
+- Add version flag to cli ([#28](https://github.com/AnswerDotAI/shell_sage/issues/28))
+
+### Bugs Squashed
+
+- base_url error when user updates shell sage to new version with different config schema ([#22](https://github.com/AnswerDotAI/shell_sage/issues/22))
+
+- command mode not working outside tmux session ([#21](https://github.com/AnswerDotAI/shell_sage/issues/21))
+
+- tmux scrollback history does not check tmux session is active ([#20](https://github.com/AnswerDotAI/shell_sage/issues/20))
+
+
 ## 0.0.6
 
 ### New Features
