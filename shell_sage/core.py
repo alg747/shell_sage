@@ -171,7 +171,7 @@ def get_docs(q: str, limit: int=2, threshold: float=0.5):
             for r in df.itertuples()]
     return f'<retrieved_docs>\n{"\n".join(docs)}\n</retrieved_docs>'
 
-# %% ../nbs/00_core.ipynb 27
+# %% ../nbs/00_core.ipynb 32
 default_cfg = asdict(ShellSageConfig())
 def get_opts(**opts):
     cfg = get_cfg()
@@ -179,7 +179,7 @@ def get_opts(**opts):
         if v is None: opts[k] = cfg.get(k, default_cfg.get(k))
     return AttrDict(opts)
 
-# %% ../nbs/00_core.ipynb 29
+# %% ../nbs/00_core.ipynb 34
 clis = {
     'anthropic': cla.Client,
     'openai': cos.Client
@@ -195,7 +195,7 @@ def get_sage(provider, model, base_url=None, api_key=None, mode='default'):
     else: cli = clis[provider](model)
     return partial(cli, sp=sps[mode])
 
-# %% ../nbs/00_core.ipynb 33
+# %% ../nbs/00_core.ipynb 38
 conts = {
     'anthropic': cla.contents,
     'openai': cos.contents
@@ -207,7 +207,7 @@ def get_res(sage, q, provider, is_command=False):
         return re.search(p, res).group(1).strip()
     else: return conts[provider](sage(q))
 
-# %% ../nbs/00_core.ipynb 37
+# %% ../nbs/00_core.ipynb 43
 @call_parse
 def main(
     query: Param('The query to send to the LLM', str, nargs='+'),
