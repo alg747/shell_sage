@@ -205,7 +205,7 @@ top -b -n 1 | ssage explain system resource usage
 
 ``` sh
 # Container troubleshooting
-docker logs my-container | ssage what's wrong with this container?
+docker logs my-container | ssage "what is wrong with this container?"
 
 # Image optimization
 docker history my-image | ssage suggest optimization improvements
