@@ -173,6 +173,60 @@ ssage --provider openai --model gpt-4o-mini "explain this error"
 ssage --history-lines 50 "what commands did I just run?"
 ```
 
+### Advanced Use Cases
+
+#### Git Workflow Enhancement
+
+``` sh
+# Review changes before commit
+git diff | ssage summarize these changes
+
+# Get commit message suggestions
+git diff --staged | ssage suggest a commit message
+
+# Analyze PR feedback
+gh pr view 123 | ssage summarize this PR feedback
+```
+
+#### Log Analysis
+
+``` sh
+# Quick error investigation
+journalctl -xe | ssage what's causing these errors?
+
+# Apache/Nginx log analysis
+tail -n 100 /var/log/nginx/access.log | ssage analyze this traffic pattern
+
+# System performance investigation
+top -b -n 1 | ssage explain system resource usage
+```
+
+#### Docker Management
+
+``` sh
+# Container troubleshooting
+docker logs my-container | ssage "what is wrong with this container?"
+
+# Image optimization
+docker history my-image | ssage suggest optimization improvements
+
+# Compose file analysis
+cat docker-compose.yml | ssage review this compose configuration
+```
+
+#### Database Operations
+
+``` sh
+# Query optimization
+psql -c "EXPLAIN ANALYZE SELECT..." | ssage optimize this query
+
+# Schema review
+pg_dump --schema-only mydb | ssage review this database schema
+
+# Index suggestions
+psql -c "\di+" | ssage suggest missing indexes
+```
+
 ## Tips & Best Practices
 
 ### Effective Usage Patterns
