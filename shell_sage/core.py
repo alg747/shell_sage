@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['print', 'sp', 'csp', 'ssp', 'default_cfg', 'clis', 'sps', 'conts', 'p', 'get_pane', 'get_panes', 'tmux_history_lim',
-           'get_history', 'get_docs', 'get_opts', 'get_sage', 'get_res', 'main']
+           'get_history', 'fmt_doc', 'get_docs', 'get_opts', 'get_sage', 'get_res', 'main']
 
 # %% ../nbs/00_core.ipynb 3
 from datetime import datetime
@@ -165,13 +165,16 @@ def get_history(n, pid='current'):
     except subprocess.CalledProcessError: return None
 
 # %% ../nbs/00_core.ipynb 24
-def get_docs(q: str, limit: int=2, threshold: float=0.5):
-    df = search(q, limit, threshold)
-    docs = [f'<retrieved_doc package_name={r.package_name} relevance_score={1 - r.cosine_distance:.2f}>\n{r.content}\n</retrieved_doc>'
-            for r in df.itertuples()]
+def fmt_doc(r):
+    return f'<retrieved_doc package_name={r.package_name} score={r.score:.2f}>\n{r.content}\n</retrieved_doc>'
+
+def get_docs(q: str, limit: int=16, threshold: float=0.5):
+    df = tbl.search(q, limit, threshold)
+    docs = [fmt_doc(r) for r in df.itertuples()]
+    print(md(f'```\nRetrieved the following man pages: {", ".join(df["package_name"])}\n```'))
     return f'<retrieved_docs>\n{"\n".join(docs)}\n</retrieved_docs>'
 
-# %% ../nbs/00_core.ipynb 32
+# %% ../nbs/00_core.ipynb 28
 default_cfg = asdict(ShellSageConfig())
 def get_opts(**opts):
     cfg = get_cfg()
@@ -179,7 +182,7 @@ def get_opts(**opts):
         if v is None: opts[k] = cfg.get(k, default_cfg.get(k))
     return AttrDict(opts)
 
-# %% ../nbs/00_core.ipynb 34
+# %% ../nbs/00_core.ipynb 30
 clis = {
     'anthropic': cla.Client,
     'openai': cos.Client
@@ -195,7 +198,7 @@ def get_sage(provider, model, base_url=None, api_key=None, mode='default'):
     else: cli = clis[provider](model)
     return partial(cli, sp=sps[mode])
 
-# %% ../nbs/00_core.ipynb 38
+# %% ../nbs/00_core.ipynb 34
 conts = {
     'anthropic': cla.contents,
     'openai': cos.contents
@@ -207,7 +210,7 @@ def get_res(sage, q, provider, is_command=False):
         return re.search(p, res).group(1).strip()
     else: return conts[provider](sage(q))
 
-# %% ../nbs/00_core.ipynb 43
+# %% ../nbs/00_core.ipynb 38
 @call_parse
 def main(
     query: Param('The query to send to the LLM', str, nargs='+'),
@@ -217,7 +220,7 @@ def main(
     history_lines: int = None, # Number of history lines. Defaults to tmux scrollback history length
     s: bool = False, # Enable sassy mode
     c: bool = False, # Enable command mode
-    retrieve: bool = False, # Retrieve relevant man pages and add them to the prompt. Must have installed `shell_sage[rag]`.
+    use_retrieval: bool = False, # Retrieve relevant man pages and add them to the prompt. Must have installed `shell_sage[rag]`.
     retrieve_limit: int = 5, # Number of documents to retrieve.
     provider: str = None, # The LLM Provider
     model: str = None, # The LLM model that will be invoked on the LLM provider
@@ -229,7 +232,8 @@ def main(
 ):
     opts = get_opts(history_lines=history_lines, provider=provider, model=model,
                     base_url=base_url, api_key=api_key, code_theme=code_theme,
-                    code_lexer=code_lexer, retrieve_limit=retrieve_limit)
+                    code_lexer=code_lexer, use_retrieval=use_retrieval,
+                    retrieve_limit=retrieve_limit)
 
     mode = 'default'
     if s: mode = 'sassy'
@@ -242,7 +246,7 @@ def main(
         print(f"{datetime.now()} | Starting ShellSage request with options {opts}")
     md = partial(Markdown, code_theme=opts.code_theme, inline_code_lexer=opts.code_lexer, inline_code_theme=opts.code_theme)
     query = ' '.join(query)
-    ctxt = '' if skip_system else _sys_info()
+    ctxt = [''] if skip_system else [_sys_info()]
 
     # Get tmux history if in a tmux session
     if os.environ.get('TMUX'):
@@ -250,20 +254,20 @@ def main(
         if opts.history_lines is None or opts.history_lines < 0:
             opts.history_lines = tmux_history_lim()
         history = get_history(opts.history_lines,pid)
-        if history: ctxt += f'<terminal_history>\n{history}\n</terminal_history>'
+        if history: ctxt += [f'<terminal_history>\n{history}\n</terminal_history>']
 
-    if retrieve:
+    if opts.use_retrieval:
         if verbosity>0: print(f"{datetime.now()} | Retrieving relevant man pages")
-        try: ctxt += get_docs(query, limit=opts.retrieve_limit)
+        try: ctxt += [get_docs(query, limit=opts.retrieve_limit)]
         except ImportError:
             raise Exception('Must have installed `shell_sage[rag]` to retrieve man pages')
-        print(ctxt)
     # Read from stdin if available
     if not sys.stdin.isatty(): 
         if verbosity>0: print(f"{datetime.now()} | Adding stdin to prompt")
-        ctxt += f'\n<context>\n{sys.stdin.read()}</context>'
+        ctxt += [f'<context>\n{sys.stdin.read()}</context>']
     
     if verbosity>0: print(f"{datetime.now()} | Finalizing prompt")
+    ctxt = '\n'.join(ctxt)
     query = f'{ctxt}\n<query>\n{query}\n</query>'
     query = [mk_msg(query)] if opts.provider == 'openai' else query
 
