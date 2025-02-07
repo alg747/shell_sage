@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['print', 'sp', 'csp', 'ssp', 'default_cfg', 'clis', 'sps', 'conts', 'p', 'get_pane', 'get_panes', 'tmux_history_lim',
-           'get_history', 'get_opts', 'get_sage', 'get_res', 'main']
+           'get_history', 'get_opts', 'get_sage', 'get_res', 'migrate', 'main']
 
 # %% ../nbs/00_core.ipynb 3
 from datetime import datetime
@@ -16,6 +16,8 @@ from rich.markdown import Markdown
 from . import __version__
 from .config import *
 from subprocess import check_output as co
+import sqlite_utils
+
 
 import os,re,subprocess,sys
 import claudette as cla, cosette as cos
@@ -199,61 +201,100 @@ def get_res(sage, q, provider, is_command=False):
         return re.search(p, res).group(1).strip()
     else: return conts[provider](sage(q))
 
-# %% ../nbs/00_core.ipynb 34
+# %% ../nbs/00_core.ipynb 31
+def migrate(db):
+    if "log" not in db.table_names():
+        db["log"].create({
+            "timestamp": str,
+            "query": str,
+            "response": str,
+            "model": str,
+        }, pk="timestamp")
+
+
+# %% ../nbs/00_core.ipynb 35
 @call_parse
 def main(
     query: Param('The query to send to the LLM', str, nargs='+'),
     v: Param("Print version", action='version') = '%(prog)s ' + __version__,
-    pid: str = 'current', # `current`, `all` or tmux pane_id (e.g. %0) for context
-    skip_system: bool = False, # Whether to skip system information in the AI's context
-    history_lines: int = None, # Number of history lines. Defaults to tmux scrollback history length
-    s: bool = False, # Enable sassy mode
-    c: bool = False, # Enable command mode
-    provider: str = None, # The LLM Provider
-    model: str = None, # The LLM model that will be invoked on the LLM provider
+    pid: str = 'current',  # `current`, `all` or tmux pane_id (e.g. %0) for context
+    skip_system: bool = False,  # Whether to skip system information in the AI's context
+    history_lines: int = None,  # Number of history lines. Defaults to tmux scrollback history length
+    s: bool = False,  # Enable sassy mode
+    c: bool = False,  # Enable command mode
+    log: bool = False,  # Enable logging
+    provider: str = None,  # The LLM Provider
+    model: str = None,  # The LLM model that will be invoked on the LLM provider
     base_url: str = None,
     api_key: str = None,
-    code_theme: str = None, # The code theme to use when rendering ShellSage's responses
-    code_lexer: str = None, # The lexer to use for inline code markdown blocks
-    verbosity: int = 0 # Level of verbosity (0 or 1)
+    code_theme: str = None,  # The code theme to use when rendering ShellSage's responses
+    code_lexer: str = None,  # The lexer to use for inline code markdown blocks
+    verbosity: int = 0  # Level of verbosity (0 or 1)
 ):
     opts = get_opts(history_lines=history_lines, provider=provider, model=model,
                     base_url=base_url, api_key=api_key, code_theme=code_theme,
                     code_lexer=code_lexer)
 
     mode = 'default'
-    if s: mode = 'sassy'
+    if s:
+        mode = 'sassy'
     if c:
         if os.environ.get('TMUX') is None:
             raise Exception('Must be in a tmux session to use command mode.')
         mode = 'command'
 
-    if verbosity>0:
+    if verbosity > 0:
         print(f"{datetime.now()} | Starting ShellSage request with options {opts}")
+    
     md = partial(Markdown, code_theme=opts.code_theme, inline_code_lexer=opts.code_lexer, inline_code_theme=opts.code_theme)
     query = ' '.join(query)
     ctxt = '' if skip_system else _sys_info()
 
     # Get tmux history if in a tmux session
     if os.environ.get('TMUX'):
-        if verbosity>0: print(f"{datetime.now()} | Adding TMUX history to prompt")
+        if verbosity > 0:
+            print(f"{datetime.now()} | Adding TMUX history to prompt")
         if opts.history_lines is None or opts.history_lines < 0:
             opts.history_lines = tmux_history_lim()
-        history = get_history(opts.history_lines,pid)
-        if history: ctxt += f'<terminal_history>\n{history}\n</terminal_history>'
+        history = get_history(opts.history_lines, pid)
+        if history:
+            ctxt += f'<terminal_history>\n{history}\n</terminal_history>'
 
     # Read from stdin if available
-    if not sys.stdin.isatty(): 
-        if verbosity>0: print(f"{datetime.now()} | Adding stdin to prompt")
+    if not sys.stdin.isatty():
+        if verbosity > 0:
+            print(f"{datetime.now()} | Adding stdin to prompt")
         ctxt += f'\n<context>\n{sys.stdin.read()}</context>'
     
-    if verbosity>0: print(f"{datetime.now()} | Finalizing prompt")
+    if verbosity > 0:
+        print(f"{datetime.now()} | Finalizing prompt")
+
     query = f'{ctxt}\n<query>\n{query}\n</query>'
     query = [mk_msg(query)] if opts.provider == 'openai' else query
 
-    if verbosity>0: print(f"{datetime.now()} | Sending prompt to model")
-    sage  = get_sage(opts.provider, opts.model, opts.base_url, opts.api_key, mode)
-    res   = get_res(sage, query, opts.provider, is_command=c)
+    if verbosity > 0:
+        print(f"{datetime.now()} | Sending prompt to model")
+
+    sage = get_sage(opts.provider, opts.model, opts.base_url, opts.api_key, mode)
+    res = get_res(sage, query, opts.provider, is_command=c)
     
-    if c: co(['tmux', 'send-keys', res], text=True)
-    else: print(md(res))
+    # Handle logging if the log flag is set
+    if log:
+        log_path = Path("~/.shell_sage/log_db/").expanduser()
+        log_path.mkdir(parents=True, exist_ok=True)
+        db = sqlite_utils.Database(log_path / "logs.db")
+
+        migrate(db)
+
+        db["log"].insert({
+            "timestamp": datetime.utcnow().isoformat(),
+            "query": query,
+            "response": res,
+            "model": opts.model,
+        }, pk="timestamp", alter=True)
+
+
+    if c:
+        co(['tmux', 'send-keys', res], text=True)
+    else:print(md(res))
+
