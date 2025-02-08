@@ -231,7 +231,7 @@ def main(
 ):
     opts = get_opts(history_lines=history_lines, provider=provider, model=model,
                     base_url=base_url, api_key=api_key, code_theme=code_theme,
-                    code_lexer=code_lexer)
+                    code_lexer=code_lexer, log=log)
 
     mode = 'default'
     if s: mode = 'sassy'
@@ -272,7 +272,7 @@ def main(
     res = get_res(sage, query, opts.provider, is_command=c)
     
     # Handle logging if the log flag is set
-    if log:
+    if opts.log:
         db = mk_db()
         db.logs.insert(Log(timestamp=datetime.now().isoformat(), query=query,
                            response=res, model=opts.model, mode=mode))
