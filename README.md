@@ -105,11 +105,17 @@ ssage --pid %3 what is happening in this pane?
 
 # Automatically fill in the command to run
 ssage --c how can I list all files including the hidden ones?
+
+# Log the model, timestamo, query and response to a local SQLite database
+ssage --log "how can i remove the file"
 ```
 
 The `--pid` flag is particularly useful when you want to analyze content
 from a different pane. The pane ID is visible in your tmux status bar
 (configured earlier).
+
+The `--log` option saves log data to an SQLite database located at
+`~/.shell_sage/log_db/logs.db`.
 
 ### Using Alternative Model Providers
 
@@ -156,6 +162,7 @@ history_lines = -1      # -1 for all history
 # Code display preferences
 code_theme = monokai    # syntax highlighting theme
 code_lexer = python     # default code lexer
+log = False      # Set to true to enable logging by default
 ```
 
 You can find all of the code theme and code lexer options here:
