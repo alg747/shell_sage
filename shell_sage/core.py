@@ -16,8 +16,7 @@ from rich.markdown import Markdown
 from . import __version__
 from .config import *
 from subprocess import check_output as co
-import sqlite_utils
-
+from fastlite import database
 
 import os,re,subprocess,sys
 import claudette as cla, cosette as cos
@@ -203,13 +202,13 @@ def get_res(sage, q, provider, is_command=False):
 
 # %% ../nbs/00_core.ipynb 31
 def migrate(db):
-    if "log" not in db.table_names():
-        db["log"].create({
-            "timestamp": str,
-            "query": str,
-            "response": str,
-            "model": str,
-        }, pk="timestamp")
+    if 'log' not in db.table_names():
+        db.create_table('log', {
+            'timestamp': str,
+            'query': str,
+            'response': str,
+            'model': str,
+        }, pk='timestamp')
 
 
 # %% ../nbs/00_core.ipynb 35
@@ -282,16 +281,15 @@ def main(
     if log:
         log_path = Path("~/.shell_sage/log_db/").expanduser()
         log_path.mkdir(parents=True, exist_ok=True)
-        db = sqlite_utils.Database(log_path / "logs.db")
-
+        db = database(log_path / "logs.db")
         migrate(db)
 
-        db["log"].insert({
-            "timestamp": datetime.utcnow().isoformat(),
-            "query": query,
-            "response": res,
-            "model": opts.model,
-        }, pk="timestamp", alter=True)
+        db['log'].insert({
+            'timestamp': datetime.utcnow().isoformat(),
+            'query': query,
+            'response': res,
+            'model': opts.model,
+        })
 
 
     if c:
