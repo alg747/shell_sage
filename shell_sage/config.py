@@ -34,6 +34,7 @@ class ShellSageConfig:
     history_lines: int = -1
     code_theme: str = "monokai"
     code_lexer: str = "python"
+    log: bool = False
 
 # %% ../nbs/01_config.ipynb 11
 def get_cfg():
