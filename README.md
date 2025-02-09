@@ -106,7 +106,7 @@ ssage --pid %3 what is happening in this pane?
 # Automatically fill in the command to run
 ssage --c how can I list all files including the hidden ones?
 
-# Log the model, timestamo, query and response to a local SQLite database
+# Log the model, timestamp, query and response to a local SQLite database
 ssage --log "how can i remove the file"
 ```
 
