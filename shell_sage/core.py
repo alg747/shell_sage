@@ -154,7 +154,8 @@ def get_panes(n):
 # %% ../nbs/00_core.ipynb 20
 def tmux_history_lim():
     lim = co(['tmux', 'display-message', '-p', '#{history-limit}'], text=True).strip()
-    return int(lim)
+    return int(lim) if lim.isdigit() else 3000
+
 
 # %% ../nbs/00_core.ipynb 22
 def get_history(n, pid='current'):
