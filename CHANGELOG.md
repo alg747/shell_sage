@@ -2,6 +2,17 @@
 
 <!-- do not remove -->
 
+## 0.0.8
+
+### New Features
+
+- Add logging of queries and response to Sqlite #27 ([#32](https://github.com/AnswerDotAI/shell_sage/pull/32)), thanks to [@aditya0yadav](https://github.com/aditya0yadav)
+
+### Bugs Squashed
+
+- Fix: Handle invalid/empty tmux history-limit values ([#39](https://github.com/AnswerDotAI/shell_sage/pull/39)), thanks to [@nassersala](https://github.com/nassersala)
+  - ### **Fix: Handle invalid/empty `tmux history-limit` values**  
+
 ## 0.0.7
 
 ### New Features
