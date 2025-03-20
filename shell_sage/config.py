@@ -19,10 +19,7 @@ _shell_sage_cfg_name = 'shell_sage.conf'
 def _cfg_path(): return xdg_config_home() / _shell_sage_home_dir / _shell_sage_cfg_name
 
 # %% ../nbs/01_config.ipynb 7
-providers = {
-    'anthropic': cla.models,
-    'openai': cos.models
-}
+providers = { 'anthropic': cla.models, 'openai': cos.models}
 
 # %% ../nbs/01_config.ipynb 9
 @dataclass
