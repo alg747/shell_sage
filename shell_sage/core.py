@@ -277,9 +277,7 @@ def main(
     pid: str = 'current',  # `current`, `all` or tmux pane_id (e.g. %0) for context
     skip_system: bool = False,  # Whether to skip system information in the AI's context
     history_lines: int = None,  # Number of history lines. Defaults to tmux scrollback history length
-    s: bool = False,  # Enable sassy mode
-    c: bool = False,  # Enable command mode
-    a: bool = False,  # Enable agent mode
+    mode: str = 'default', # Available ShellSage modes: ['default', 'command', 'agent', 'sassy']
     log: bool = False,  # Enable logging
     provider: str = None,  # The LLM Provider
     model: str = None,  # The LLM model that will be invoked on the LLM provider
@@ -293,13 +291,10 @@ def main(
                     base_url=base_url, api_key=api_key, code_theme=code_theme,
                     code_lexer=code_lexer, log=log)
 
-    mode = 'default'
-    if s: mode = 'sassy'
-    if a: mode = 'agent'
-    if c:
-        if os.environ.get('TMUX') is None:
-            raise Exception('Must be in a tmux session to use command mode.')
-        mode = 'command'
+    if mode not in ['default', 'command', 'agent', 'sassy']:
+        raise Exception(f"{mode} is not valid. Must be one of the following: ['default', 'command', 'agent', 'sassy']")
+    if mode == 'command' and os.environ.get('TMUX') is None:
+        raise Exception('Must be in a tmux session to use command mode.')
 
     if verbosity > 0: print(f"{datetime.now()} | Starting ShellSage request with options {opts}")
     
@@ -336,6 +331,6 @@ def main(
         db.logs.insert(Log(timestamp=datetime.now().isoformat(), query=query,
                            response=res, model=opts.model, mode=mode))
 
-    if c: co(['tmux', 'send-keys', res], text=True)
-    elif a and not verbosity: print(md(res))
+    if mode == 'command': co(['tmux', 'send-keys', res], text=True)
+    elif mode == 'agent' and not verbosity: print(md(res))
     else: print(md(res))
