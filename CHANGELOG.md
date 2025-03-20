@@ -2,6 +2,16 @@
 
 <!-- do not remove -->
 
+## 0.1.0
+
+### New Features
+
+- Add agent mode allowing shell sage to interact with your file system #43.
+
+### Bugs Squashed
+
+- Initial use after install errors looking for: fastlite ([#41](https://github.com/AnswerDotAI/shell_sage/issues/41))
+
 ## 0.0.9
 
 
