@@ -32,7 +32,7 @@ ready to help with both simple commands and complex operations.
 Install ShellSage directly from PyPI using pip:
 
 ``` sh
-pip install shell_sage
+pip install shell-sage
 ```
 
 ### Prerequisites
